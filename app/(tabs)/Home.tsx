@@ -5,12 +5,12 @@ import {
   FlatList,
   Image,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../../lib/firebase';
 import { Post } from '../../types';
 
@@ -112,6 +112,7 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.actionIcon}>🔖</Text>
         </TouchableOpacity>
       </View>
+     <View style={{ height: 1, backgroundColor: '#CED0CE', marginVertical: 10 }} />
     </View>
   );
 

@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query, QueryDocumentSnapshot, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
@@ -20,6 +21,7 @@ const ProfileScreen: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
@@ -64,6 +66,7 @@ const ProfileScreen: React.FC = () => {
           onPress: async () => {
             try {
               await signOut();
+              router.replace("/Login");
             } catch (error: any) {
               Alert.alert('Error', error.message);
             }

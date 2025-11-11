@@ -1,7 +1,8 @@
+import { uploadToCloudinary } from '@/services/image-upload';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,15 +10,15 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { MainTabParamList } from '../../types';
 
 type CreatePostScreenNavigationProp = BottomTabNavigationProp<MainTabParamList, 'CreatePost'>;
@@ -31,6 +32,7 @@ const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
+  const router = useRouter()
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -52,27 +54,7 @@ const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const uploadImage = async (uri: string): Promise<string> => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    
-    const filename = `posts/${user?.uid}_${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
-    
-    const uploadTask = uploadBytesResumable(storageRef, blob);
-    
-    return new Promise((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        null,
-        (error) => reject(error),
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(downloadURL);
-        }
-      );
-    });
-  };
+  
 
   const handlePost = async () => {
     if (!text.trim() && !image) {
@@ -84,9 +66,9 @@ const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
     try {
       let imageUrl = '';
       
-      if (image) {
-        imageUrl = await uploadImage(image);
-      }
+if (image) {
+  imageUrl = await uploadToCloudinary(image); 
+}
 
       await addDoc(collection(db, 'posts'), {
         userId: user?.uid,
@@ -101,7 +83,7 @@ const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
       setText('');
       setImage(null);
       Alert.alert('Success', 'Post created successfully!');
-      navigation.navigate('Home');
+      router.replace('/(tabs)/Home');
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -117,7 +99,7 @@ const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             style={styles.cancelButton}
           >
             <Text style={styles.cancelText}>✕</Text>
