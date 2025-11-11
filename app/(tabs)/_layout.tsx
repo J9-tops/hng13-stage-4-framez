@@ -1,35 +1,108 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Tabs } from 'expo-router';
+
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#8E8E93',
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarStyle: {
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 60,
+          borderTopWidth: 1,
+          borderTopColor: '#F2F2F7'
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600'
+        }
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="Home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIcon}>
+              <Text style={{ fontSize: 24, color }}>🏠</Text>
+            </View>
+          )
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="CreatePost"
+       
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: '',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.createButton}>
+              <Text style={styles.createButtonText}>+</Text>
+            </View>
+          )
+        }}
+      />
+      <Tabs.Screen
+        name="Profile"
+       
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIcon}>
+              <Text style={{ fontSize: 24, color }}>👤</Text>
+            </View>
+          )
         }}
       />
     </Tabs>
   );
 }
+
+
+
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF'
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#8E8E93'
+  },
+  tabIcon: {
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  createButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8
+  },
+  createButtonText: {
+    fontSize: 32,
+    color: '#FFFFFF',
+    fontWeight: '300',
+    marginTop: -4
+  }
+});
