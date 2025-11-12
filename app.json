@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "hng13-stage-4-framez",
-    "slug": "hng13-stage-4-framez",
+    "slug": "framez",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b24e1a7-874b-4a52-a5f4-2aec8b0c8930"
+      }
+    },
+    "owner": "jimmy9tops"
   }
 }
