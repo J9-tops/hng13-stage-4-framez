@@ -1,5 +1,5 @@
 import { StackNavigationProp } from '@react-navigation/stack';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
@@ -31,6 +31,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
    const router = useRouter(); 
+const { fromLogout } = useLocalSearchParams<{ fromLogout?: string }>();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -56,12 +57,14 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         style={styles.keyboardView}
       >
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+          {!fromLogout && (
+  <TouchableOpacity
+    style={styles.backButton}
+    onPress={() => router.back()}
+  >
+    <Text style={styles.backButtonText}>←</Text>
+  </TouchableOpacity>
+)}
         </View>
 
         <View style={styles.content}>

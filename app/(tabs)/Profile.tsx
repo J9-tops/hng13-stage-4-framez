@@ -83,7 +83,7 @@ const ProfileScreen: React.FC = () => {
           onPress: async () => {
             try {
               await signOut();
-              router.replace("/Login");
+              router.replace({ pathname: "/Login", params: { fromLogout: "true" } });
             } catch (error: any) {
               Alert.alert('Error', error.message);
             }
