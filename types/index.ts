@@ -15,6 +15,8 @@ export interface Post {
   imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
+   likes?: string[]; 
+  likeCount?: number;
 }
 
 export interface AuthContextType {

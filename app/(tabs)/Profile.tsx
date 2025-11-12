@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query, QueryDocumentSnapshot, where } from 'firebase/firestore';
-import { Settings } from "lucide-react-native";
+import { Heart, Settings } from "lucide-react-native";
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,27 +29,28 @@ export function getDaysActive(user: User | null): number {
   const diffMs = now.getTime() - created.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-
   return diffDays < 1 ? 1 : diffDays;
 }
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<'grid' | 'list' | 'liked'>('grid');
   const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
 
+    // Query for user's own posts
     const postsQuery = query(
       collection(db, 'posts'),
       where('userId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
+    const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
       const postsData: Post[] = [];
       snapshot.forEach((doc: QueryDocumentSnapshot) => {
         const data = doc.data();
@@ -61,14 +62,48 @@ const ProfileScreen: React.FC = () => {
           text: data.text,
           imageUrl: data.imageUrl,
           createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date()
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          likes: data.likes || [],
+          likeCount: data.likes?.length || 0
         });
       });
       setPosts(postsData);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Query for liked posts
+    const likedPostsQuery = query(
+      collection(db, 'posts'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribeLiked = onSnapshot(likedPostsQuery, (snapshot) => {
+      const likedPostsData: Post[] = [];
+      snapshot.forEach((doc: QueryDocumentSnapshot) => {
+        const data = doc.data();
+        // Filter posts that the current user has liked
+        if (data.likes && data.likes.includes(user.uid)) {
+          likedPostsData.push({
+            id: doc.id,
+            userId: data.userId,
+            userName: data.userName,
+            userAvatar: data.userAvatar,
+            text: data.text,
+            imageUrl: data.imageUrl,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate() || new Date(),
+            likes: data.likes || [],
+            likeCount: data.likes?.length || 0
+          });
+        }
+      });
+      setLikedPosts(likedPostsData);
+    });
+
+    return () => {
+      unsubscribePosts();
+      unsubscribeLiked();
+    };
   }, [user]);
 
   const handleLogout = () => {
@@ -109,26 +144,51 @@ const ProfileScreen: React.FC = () => {
 
   const renderListPost = ({ item }: { item: Post }) => (
     <View style={styles.listPost}>
+      <View style={styles.listPostHeader}>
+        <View style={styles.userInfo}>
+          <View style={styles.smallAvatar}>
+            {item.userAvatar ? (
+              <Image source={{ uri: item.userAvatar }} style={styles.smallAvatarImage} />
+            ) : (
+              <Text style={styles.smallAvatarText}>
+                {item.userName.charAt(0).toUpperCase()}
+              </Text>
+            )}
+          </View>
+          <Text style={styles.listPostUserName}>{item.userName}</Text>
+        </View>
+      </View>
       {item.text && <Text style={styles.listPostText}>{item.text}</Text>}
       {item.imageUrl && (
         <Image source={{ uri: item.imageUrl }} style={styles.listPostImage} />
       )}
-      <Text style={styles.listPostDate}>
-        {item.createdAt.toLocaleDateString()}
-      </Text>
+      <View style={styles.listPostFooter}>
+        <View style={styles.likeInfo}>
+          <Heart size={16} color="#FF3B30" fill="#FF3B30" />
+          <Text style={styles.listPostLikes}>{item.likeCount || 0}</Text>
+        </View>
+        <Text style={styles.listPostDate}>
+          {item.createdAt.toLocaleDateString()}
+        </Text>
+      </View>
     </View>
   );
+
+  const getCurrentData = () => {
+    if (activeTab === 'liked') {
+      return likedPosts;
+    }
+    return posts;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleLogout} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}><Settings /></Text>
+          <Settings size={24} color="#000000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>@{user?.displayName?.toLowerCase().replace(/\s/g, '')}</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>.</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
 
       <View style={styles.profileSection}>
@@ -149,8 +209,12 @@ const ProfileScreen: React.FC = () => {
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <View style={styles.stat}>
+              <Text style={styles.statNumber}>{likedPosts.length}</Text>
+              <Text style={styles.statLabel}>Liked</Text>
+            </View>
+            <View style={styles.stat}>
               <Text style={styles.statNumber}>{getDaysActive(user)}</Text>
-              <Text style={styles.statLabel}>Days Active</Text>
+              <Text style={styles.statLabel}>{getDaysActive(user) > 1 ?  "Days" : "Day"}</Text>
             </View>
           </View>
         </View>
@@ -169,13 +233,23 @@ const ProfileScreen: React.FC = () => {
           style={[styles.tab, activeTab === 'grid' && styles.activeTab]}
           onPress={() => setActiveTab('grid')}
         >
-          <Text style={styles.tabIcon}>▦</Text>
+          <Text style={[styles.tabIcon, activeTab === 'grid' && styles.activeTabIcon]}>▦</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'list' && styles.activeTab]}
           onPress={() => setActiveTab('list')}
         >
-          <Text style={styles.tabIcon}>≡</Text>
+          <Text style={[styles.tabIcon, activeTab === 'list' && styles.activeTabIcon]}>≡</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
+          onPress={() => setActiveTab('liked')}
+        >
+          <Heart 
+            size={20} 
+            color={activeTab === 'liked' ? '#000000' : '#8E8E93'}
+            fill="none"
+          />
         </TouchableOpacity>
       </View>
 
@@ -185,7 +259,7 @@ const ProfileScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={getCurrentData()}
           renderItem={activeTab === 'grid' ? renderGridPost : renderListPost}
           keyExtractor={(item) => item.id}
           numColumns={activeTab === 'grid' ? 3 : 1}
@@ -193,8 +267,14 @@ const ProfileScreen: React.FC = () => {
           contentContainerStyle={styles.postsContainer}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No posts yet</Text>
-              <Text style={styles.emptySubtext}>Share your first moment!</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'liked' ? 'No liked posts' : 'No posts yet'}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {activeTab === 'liked' 
+                  ? 'Posts you like will appear here' 
+                  : 'Share your first moment!'}
+              </Text>
             </View>
           }
         />
@@ -218,10 +298,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F2F2F7'
   },
   headerButton: {
-    padding: 8
-  },
-  headerButtonText: {
-    fontSize: 20
+    padding: 8,
+    width: 40
   },
   headerTitle: {
     fontSize: 17,
@@ -288,34 +366,6 @@ const styles = StyleSheet.create({
     color: '#000000',
     lineHeight: 18
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8
-  },
-  followButton: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  followButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600'
-  },
-  messageButton: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  messageButtonText: {
-    color: '#000000',
-    fontSize: 15,
-    fontWeight: '600'
-  },
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -334,6 +384,9 @@ const styles = StyleSheet.create({
   tabIcon: {
     fontSize: 24,
     color: '#8E8E93'
+  },
+  activeTabIcon: {
+    color: '#000000'
   },
   postsContainer: {
     paddingTop: 1
@@ -364,6 +417,40 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F2F2F7'
   },
+  listPostHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  smallAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8
+  },
+  smallAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16
+  },
+  smallAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  listPostUserName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000000'
+  },
   listPostText: {
     fontSize: 15,
     color: '#000000',
@@ -376,6 +463,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     backgroundColor: '#F2F2F7'
+  },
+  listPostFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  likeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  listPostLikes: {
+    fontSize: 13,
+    color: '#000000',
+    fontWeight: '500'
   },
   listPostDate: {
     fontSize: 13,

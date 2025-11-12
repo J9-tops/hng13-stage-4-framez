@@ -1,4 +1,5 @@
-import { collection, onSnapshot, orderBy, query, QueryDocumentSnapshot } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, doc, onSnapshot, orderBy, query, QueryDocumentSnapshot, updateDoc } from 'firebase/firestore';
+import { Heart } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -7,13 +8,16 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { Post } from '../../types';
 
 const HomeScreen: React.FC = () => {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -36,7 +40,9 @@ const HomeScreen: React.FC = () => {
           text: data.text,
           imageUrl: data.imageUrl,
           createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date()
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          likes: data.likes || [],
+          likeCount: data.likes?.length || 0
         });
       });
       setPosts(postsData);
@@ -46,6 +52,27 @@ const HomeScreen: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const handleLike = async (postId: string, likes: string[] = []) => {
+    if (!user) return;
+
+    const postRef = doc(db, 'posts', postId);
+    const isLiked = likes.includes(user.uid);
+
+    try {
+      if (isLiked) {
+        await updateDoc(postRef, {
+          likes: arrayRemove(user.uid)
+        });
+      } else {
+        await updateDoc(postRef, {
+          likes: arrayUnion(user.uid)
+        });
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -65,36 +92,57 @@ const HomeScreen: React.FC = () => {
     return date.toLocaleDateString();
   };
 
-  const renderPost = ({ item }: { item: Post }) => (
-    <View style={styles.postCard}>
-      <View style={styles.postHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            {item.userAvatar ? (
-              <Image source={{ uri: item.userAvatar }} style={styles.avatarImage} />
-            ) : (
-              <Text style={styles.avatarText}>{item.userName.charAt(0).toUpperCase()}</Text>
-            )}
-          </View>
-          <View>
-            <Text style={styles.userName}>{item.userName}</Text>
-            <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
+  const renderPost = ({ item }: { item: Post }) => {
+    const isLiked = user ? item.likes?.includes(user.uid) : false;
+
+    return (
+      <View style={styles.postCard}>
+        <View style={styles.postHeader}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatar}>
+              {item.userAvatar ? (
+                <Image source={{ uri: item.userAvatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>{item.userName.charAt(0).toUpperCase()}</Text>
+              )}
+            </View>
+            <View>
+              <Text style={styles.userName}>{item.userName}</Text>
+              <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
+            </View>
           </View>
         </View>
+
+        {item.text && <Text style={styles.postText}>{item.text}</Text>}
+
+        {item.imageUrl && (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+        )}
+
+        <View style={styles.postActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleLike(item.id, item.likes)}
+          >
+            <Heart
+              size={24}
+              color={isLiked ? '#FF3B30' : '#000000'}
+              fill={isLiked ? '#FF3B30' : 'none'}
+            />
+          </TouchableOpacity>
+          {(item.likeCount ?? 0) > 0 && (
+            <Text style={styles.likeCount}>{item.likeCount ?? 0} {(item.likeCount ?? 0) === 1 ? 'like' : 'likes'}</Text>
+          )}
+        </View>
+
+        <View style={styles.divider} />
       </View>
-
-      {item.text && <Text style={styles.postText}>{item.text}</Text>}
-
-      {item.imageUrl && (
-        <Image
-          source={{ uri: item.imageUrl }}
-          style={styles.postImage}
-          resizeMode="cover"
-        />
-      )}
-     <View style={{ height: 1, backgroundColor: '#CED0CE', marginVertical: 10 }} />
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -154,16 +202,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000000'
   },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  headerIcon: {
-    padding: 8
-  },
-  headerIconText: {
-    fontSize: 20
-  },
   feedContent: {
     paddingBottom: 20
   },
@@ -211,13 +249,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93'
   },
-  moreButton: {
-    padding: 8
-  },
-  moreIcon: {
-    fontSize: 20,
-    color: '#000000'
-  },
   postText: {
     fontSize: 15,
     color: '#000000',
@@ -232,18 +263,22 @@ const styles = StyleSheet.create({
   },
   postActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12
   },
   actionButton: {
-    padding: 8,
-    marginRight: 12
+    marginRight: 8
   },
-  actionIcon: {
-    fontSize: 24
+  likeCount: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '500'
   },
-  spacer: {
-    flex: 1
+  divider: {
+    height: 1,
+    backgroundColor: '#CED0CE',
+    marginTop: 10
   },
   emptyContainer: {
     alignItems: 'center',
