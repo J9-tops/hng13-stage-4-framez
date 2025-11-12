@@ -1,5 +1,6 @@
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useRouter } from 'expo-router';
+import { Eye, EyeOff } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -119,7 +120,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  <Text style={styles.eyeIconText}>{showPassword ? <EyeOff /> : <Eye />}</Text>
                 </TouchableOpacity>
               </View>
             </View>

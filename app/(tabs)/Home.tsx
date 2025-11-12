@@ -7,7 +7,6 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -82,9 +81,6 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.timestamp}>{formatTimestamp(item.createdAt)}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.moreButton}>
-          <Text style={styles.moreIcon}>⋯</Text>
-        </TouchableOpacity>
       </View>
 
       {item.text && <Text style={styles.postText}>{item.text}</Text>}
@@ -96,22 +92,6 @@ const HomeScreen: React.FC = () => {
           resizeMode="cover"
         />
       )}
-
-      <View style={styles.postActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionIcon}>♡</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionIcon}>💬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionIcon}>↗</Text>
-        </TouchableOpacity>
-        <View style={styles.spacer} />
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionIcon}>🔖</Text>
-        </TouchableOpacity>
-      </View>
      <View style={{ height: 1, backgroundColor: '#CED0CE', marginVertical: 10 }} />
     </View>
   );
@@ -128,14 +108,6 @@ const HomeScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Framez</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Text style={styles.headerIconText}>🔔</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Text style={styles.headerIconText}>▶</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       <FlatList

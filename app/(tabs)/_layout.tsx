@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Tabs } from 'expo-router';
+import { House, UserRound } from 'lucide-react-native';
 
 
 export default function TabLayout() {
@@ -12,9 +13,9 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#8E8E93',
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: 8,
+          paddingBottom: 24,
           paddingTop: 8,
-          height: 60,
+          height: 80,
           borderTopWidth: 1,
           borderTopColor: '#F2F2F7'
         },
@@ -30,7 +31,7 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabIcon}>
-              <Text style={{ fontSize: 24, color }}>🏠</Text>
+              <Text style={{ fontSize: 24, color }}><House /></Text>
             </View>
           )
         }}
@@ -54,7 +55,7 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabIcon}>
-              <Text style={{ fontSize: 24, color }}>👤</Text>
+              <Text style={{ fontSize: 24, color }}><UserRound /></Text>
             </View>
           )
         }}

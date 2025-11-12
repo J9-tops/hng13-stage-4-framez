@@ -3,7 +3,6 @@ import { Redirect } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-// Import screens
 
 
 

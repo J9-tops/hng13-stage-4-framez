@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { collection, onSnapshot, orderBy, query, QueryDocumentSnapshot, where } from 'firebase/firestore';
+import { Settings } from "lucide-react-native";
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,7 +15,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
-import { Post } from '../../types';
+import { Post, User } from '../../types';
+
+export function getDaysActive(user: User | null): number {
+  if (!user || !user.createdAt) return 0;
+
+  const created =
+    (user.createdAt && typeof (user.createdAt as any).toDate === 'function')
+      ? (user.createdAt as any).toDate()
+      : new Date(user.createdAt as any);
+
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+
+  return diffDays < 1 ? 1 : diffDays;
+}
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -106,11 +123,11 @@ const ProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleLogout} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>⚙️</Text>
+          <Text style={styles.headerButtonText}><Settings /></Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>@{user?.displayName?.toLowerCase().replace(/\s/g, '')}</Text>
         <TouchableOpacity style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>⋯</Text>
+          <Text style={styles.headerButtonText}>.</Text>
         </TouchableOpacity>
       </View>
 
@@ -132,12 +149,8 @@ const ProfileScreen: React.FC = () => {
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>1.2M</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>345</Text>
-              <Text style={styles.statLabel}>Following</Text>
+              <Text style={styles.statNumber}>{getDaysActive(user)}</Text>
+              <Text style={styles.statLabel}>Days Active</Text>
             </View>
           </View>
         </View>
@@ -148,15 +161,6 @@ const ProfileScreen: React.FC = () => {
             Digital creator and photographer.{'\n'}
             Exploring the world one frame at a time.
           </Text>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.followButton}>
-            <Text style={styles.followButtonText}>Follow</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.messageButton}>
-            <Text style={styles.messageButtonText}>Message</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
