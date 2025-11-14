@@ -26,7 +26,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.iconText}>📷</Text>
           </View>
           <Text style={styles.title}>Framez</Text>
-          <Text style={styles.subtitle}>Capture and share your moments.</Text>
+          <Text style={styles.subtitle}>Capture and share your moments</Text>
         </View>
 
         <View style={styles.buttonContainer}>
